@@ -1,5 +1,6 @@
 #include <Timer.h>
 #include "Trab2Server.h"
+#include "printf.h"
 
 module Trab2ServerC {
   uses interface Boot;
@@ -17,7 +18,7 @@ implementation {
   message_t pkt;
   uint8_t rcvdClientID;
   uint8_t rcvdMsgID;
-  uint8_t clientID[N_CLIENTS] = { 1, 2, 3 }; //Array com id dos clientes
+  uint8_t clientID[N_CLIENTS] = { 3, 4, 5 }; //Array com id dos clientes
   uint8_t cMsgCount[N_CLIENTS]; // Array com o contador de mensagens recebidas de cada cliente
   bool busy = FALSE;
   uint8_t i;
