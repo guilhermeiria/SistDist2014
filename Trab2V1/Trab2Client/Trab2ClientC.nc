@@ -21,7 +21,7 @@ implementation {
   uint8_t serverID[N_SERVERS] = { 1, 2 }; //Array com id dos clientes
   uint8_t sMsgCount[N_SERVERS]; // Array com o contador de mensagens recebidas de cada cliente
   bool busy = FALSE;
-  uint8_t i;
+  uint8_t i, j; //Contadores para, respectivamente, envio e recebimento dos servidores
 
   void setLeds(uint16_t val) {
     if (val == 0)
@@ -37,6 +37,7 @@ implementation {
 
   event void AMControl.startDone(error_t err) {
     if (err == SUCCESS) {
+      // Aguarda 3s (inicializacao do servidor) e inicia timer periodico de intervalo definido pela variavel
       call Timer0.startPeriodicAt(3000, TIMER_PERIOD_MILLI_C);
     }
     else {
@@ -48,8 +49,13 @@ implementation {
   }
 
   event void Timer0.fired() {
-    for(i=0; i < N_SERVERS; i++){
-      if (!busy) {
+    i = 0;
+    while(i < N_SERVERS){
+
+// Verificar se entrega esta normalizada (msgs enviadas confirmadas)
+// Se tiver entregas pendentes, cancelar AMSend e reenviar com o mesmo MsgID
+
+      //if (!busy) {
               Trab2msg* pktsend = (Trab2msg*)(call Packet.getPayload(&pkt, sizeof(Trab2msg)));
               call Leds.led0Off();
               call Leds.led1Off();
@@ -57,13 +63,16 @@ implementation {
               if (pktsend == NULL) {
 	        return;
               }
+              printf("Sending[Client]: %u, i: %u, msg count: %u, server: %u\n",TOS_NODE_ID,i,sMsgCount[i], serverID[i]);
               pktsend->src = TOS_NODE_ID;
-              pktsend->counter = 0;
+              pktsend->counter = 0;		// Sera preenchido como o valor do timer do servidor correspondente
               pktsend->msgID = sMsgCount[i];
+
               if (call AMSend.send(serverID[i], &pkt, sizeof(Trab2msg)) == SUCCESS) {
                 busy = TRUE;
               }
-      }
+      i++;
+      // verificacao de busy comentada}
     } 
   }
 
@@ -82,12 +91,15 @@ implementation {
 
       rcvdServerID = btrpkt->src;
       rcvdMsgID = btrpkt->msgID;
-
-      for(i=0;i<N_SERVERS;i++){
+      
+      j = 0;
+      while(j<N_SERVERS){
+        printf("Recebendo[Client]: %u, i: %u, msg count: %u, server: %u\n",TOS_NODE_ID,i,rcvdMsgID, rcvdServerID);
         if (rcvdServerID == serverID[i]){
-          setLeds(i);
+          setLeds(j);
+          sMsgCount[j]++;
         }
-        sMsgCount[i]++;
+        i++;
       }
     }
     return msg;
