@@ -3,7 +3,7 @@
 
 enum {
   AM_TRAB2 = 6,
-  TIMER_PERIOD_MILLI_C = 1800,
+  TIMER_PERIOD_MILLI_C = 250,
   N_SERVERS = 2
 };
 

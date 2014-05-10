@@ -21,7 +21,8 @@ implementation {
   uint8_t serverID[N_SERVERS] = { 1, 2 }; //Array com id dos clientes
   uint8_t sMsgCount[N_SERVERS]; // Array com o contador de mensagens recebidas de cada cliente
   bool busy = FALSE;
-  uint8_t i, contPkts, j ; //Contadores para, respectivamente, envio(atual e total) e recebimento dos servidores
+  uint8_t i, j ; //Contadores para, respectivamente, envio e recebimento dos servidores
+  uint8_t contPkts = 0;
 
   void setLeds(uint16_t val) {
     if (val == 0)
@@ -37,8 +38,8 @@ implementation {
 
   event void AMControl.startDone(error_t err) {
     if (err == SUCCESS) {
-      // Aguarda 3s (inicializacao do servidor) e inicia timer periodico de intervalo definido pela variavel
-      call Timer0.startPeriodicAt(3000, TIMER_PERIOD_MILLI_C);
+      // Aguarda 2s (inicializacao do servidor) e inicia timer periodico de intervalo definido pela variavel
+      call Timer0.startPeriodicAt(2000, TIMER_PERIOD_MILLI_C);
     }
     else {
       call AMControl.start();
@@ -62,7 +63,7 @@ implementation {
               if (pktsend == NULL) {
 	        return;
               }
-              printf("Sending: i: %u, Tcount: %u, server: %u\n", i, contPkts, serverID[i]);
+              printf("Sending[CLIENT]: i: %u, Tcount: %u, server: %u\n", i, contPkts, serverID[i]);
               printfflush();
               pktsend->src = TOS_NODE_ID;
               pktsend->counter = 0;		// Sera preenchido como o valor do timer do servidor correspondente
@@ -77,7 +78,7 @@ implementation {
 
   event void AMSend.sendDone(message_t* msg, error_t err) {
     if (&pkt == msg) {
-      printf("Confirm: Tmsg: %u\n", contPkts);
+      printf("Confirm[CLIENT]: Tmsg: %u\n", contPkts);
       printfflush();
       busy = FALSE;
       contPkts++;		//Com a confirmacao de entrega, total de pacotes eh incrementado
@@ -96,7 +97,7 @@ implementation {
       
       j = 0;
       while(j<N_SERVERS){
-        printf("Recebendo: i: %u, msg count: %u, server: %u\n", i, rcvdMsgID, rcvdServerID);
+        printf("Recebendo[CLIENT]: i: %u, msg count: %u, server: %u\n", i, rcvdMsgID, rcvdServerID);
         printfflush();
         if (rcvdServerID == serverID[i]){
           setLeds(j);
