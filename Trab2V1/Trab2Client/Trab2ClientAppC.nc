@@ -12,16 +12,14 @@ implementation {
   components Trab2ClientC as App;
   components new TimerMilliC() as Timer0;
   components ActiveMessageC;
-  components new AMSenderC(AM_TRAB2);
-  components new AMReceiverC(AM_TRAB2);
+  components new PerfectPointToPointLinkerC(AM_TRAB2) as pp2p;
   components SerialStartC;
 
   App.Boot -> MainC;
   App.Leds -> LedsC;
   App.Timer0 -> Timer0;
-  App.Packet -> AMSenderC;
-  App.AMPacket -> AMSenderC;
+  App.Packet -> ActiveMessageC;
+  App.pp2p -> pp2p;
   App.AMControl -> ActiveMessageC;
-  App.AMSend -> AMSenderC;
-  App.Receive -> AMReceiverC;
+
 }

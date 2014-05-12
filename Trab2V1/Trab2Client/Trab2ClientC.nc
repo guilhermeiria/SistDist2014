@@ -7,9 +7,7 @@ module Trab2ClientC {
   uses interface Leds;
   uses interface Timer<TMilli> as Timer0;
   uses interface Packet;
-  uses interface AMPacket;
-  uses interface AMSend;
-  uses interface Receive;
+  uses interface PerfectPointToPointLink as pp2p;
   uses interface SplitControl as AMControl;
 }
 implementation {
@@ -69,27 +67,14 @@ implementation {
               pktsend->counter = 0;		// Sera preenchido como o valor do timer do servidor correspondente
               pktsend->msgID = sMsgCount[i];
 
-              if (call AMSend.send(serverID[i], &pkt, sizeof(Trab2msg)) == SUCCESS) {
-                busy = TRUE;
+              if (call pp2p.pp2pSend(serverID[i], pkt, sizeof(Trab2msg)) == SUCCESS) {
+             //tratamento de erro: pilha de envio cheia!
               }
     }
   } 
-
-
-  event void AMSend.sendDone(message_t* msg, error_t err) {
-    if (&pkt == msg) {
-      printf("Confirm[CLIENT]: Tmsg: %u\n", contPkts);
-      printfflush();
-      busy = FALSE;
-      contPkts++;		//Com a confirmacao de entrega, total de pacotes eh incrementado
-      
-    }
-  }
-
-  event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
+  event message_t* pp2p.pp2pDeliver (am_addr_t src, message_t* msg, void* payload, uint8_t len) {
     if (len == sizeof(Trab2msg)) {
       Trab2msg* btrpkt = (Trab2msg*)payload;
-
       call Leds.led0On();
 
       rcvdServerID = btrpkt->src;
@@ -108,5 +93,5 @@ implementation {
     }
     return msg;
   }
-    
+
 }
