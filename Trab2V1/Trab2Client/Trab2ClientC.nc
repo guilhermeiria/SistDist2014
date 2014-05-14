@@ -30,6 +30,25 @@ implementation {
       call Leds.led2On();
   }
 
+  task void requestTime(){
+    Trab2msg* pktsend = (Trab2msg*)(call Packet.getPayload(&pkt, sizeof(Trab2msg)));    
+    if (pktsend == NULL) {
+      return;
+    }    
+    pktsend->src = TOS_NODE_ID;
+    pktsend->counter = 0;		// Sera preenchido como o valor do timer do servidor correspondente
+    pktsend->msgID = sMsgCount[i];
+
+    for(i=0; i< N_SERVERS; i++){
+      if (call pp2p.pp2pSend(serverID[i], pkt, sizeof(Trab2msg)) != SUCCESS) {
+      //tratamento de erro: pilha de envio cheia!
+        call pp2p.tryAgain(serverID[i], pkt, sizeof(Trab2msg))
+      }else{
+        printf("Sending[CLIENT]: i: %u, Tcount: %u, server: %u\n", i, contPkts, serverID[i]);
+        printfflush();
+      }
+    }
+ }
   event void Boot.booted() {
     call AMControl.start();
   }
@@ -48,29 +67,10 @@ implementation {
   }
 
   event void Timer0.fired() {
-    i = contPkts % N_SERVERS; 		// i recebe o valor relacionado a um dos servidores
-
-// Verificar se entrega esta normalizada (msgs enviadas confirmadas)
-// Se tiver entregas pendentes, cancelar AMSend e reenviar com o mesmo MsgID
-
-    if (!busy) {
-              Trab2msg* pktsend = (Trab2msg*)(call Packet.getPayload(&pkt, sizeof(Trab2msg)));
-              call Leds.led0Off();
-              call Leds.led1Off();
-              call Leds.led2Off();
-              if (pktsend == NULL) {
-	        return;
-              }
-              printf("Sending[CLIENT]: i: %u, Tcount: %u, server: %u\n", i, contPkts, serverID[i]);
-              printfflush();
-              pktsend->src = TOS_NODE_ID;
-              pktsend->counter = 0;		// Sera preenchido como o valor do timer do servidor correspondente
-              pktsend->msgID = sMsgCount[i];
-
-              if (call pp2p.pp2pSend(serverID[i], pkt, sizeof(Trab2msg)) == SUCCESS) {
-             //tratamento de erro: pilha de envio cheia!
-              }
-    }
+    post requestTime();
+    call Leds.led0Off();
+    call Leds.led1Off();
+    call Leds.led2Off();
   } 
   event message_t* pp2p.pp2pDeliver (am_addr_t src, message_t* msg, void* payload, uint8_t len) {
     if (len == sizeof(Trab2msg)) {
